@@ -1,0 +1,80 @@
+*{
+  box-sizing: border-box;
+  margin: 0;
+}
+
+.chat-heading{
+  text-align: center;
+  color: rgb(72, 46, 143);
+  box-shadow: 1px 1px 10px 10px rgb(133, 0, 0);
+  font-size: 25px;
+  background-color: rgba(0, 0, 0, 0);
+}
+
+.chat-box{
+  width: 30%;
+  min-width: 400px;
+  background-color: rgba(72, 46, 143,0);
+  height: 500px;
+  margin: 40px auto;
+  border: 1px solid rgb(0, 0, 0);
+  border-radius: 0 0 30px 30px;
+}
+
+.mes-cont{
+  width: 100%;
+  height: 90%;
+  overflow-y: auto;
+  margin-bottom: 5px;
+  scroll-behavior:smooth
+}
+
+.input-send{
+  width: 100%;
+  height: 10%;
+  border-radius: 0 0 30px 30px;
+  overflow: hidden;
+}
+
+.input-send input{
+  height: 100%;
+  width: 70%;
+  border: none;
+  outline: none;
+  color: rgb(0, 0, 0);
+  padding: 5px;
+  font-size: 16px;
+}
+
+.input-send button{
+  width: 30%;
+  height: 100%;
+  color: aquamarine;
+  background-color: black;
+  font-weight: bolder;
+  font-size: 20px;
+  outline: none;
+  border: none;
+  cursor: pointer;
+}
+
+.input-send button:active{
+  background-color: rgb(77, 75, 73);
+}
+
+@media only screen and (max-width:450px){
+  .chat-box{
+    width: 100%;
+    min-width: 0;
+  }
+
+  .chat-heading{
+    font-size: 24px;
+  }
+}
+
+@media only screen and (max-width:400px){
+  .chat-box{
+    height: 600px;
+  }
+}
