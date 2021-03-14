@@ -21,6 +21,48 @@
   border-radius: 0 0 30px 30px;
 }
 
+.users-cont{
+  position: absolute;
+  box-shadow: 0 0 10px 2px rgb(37, 37, 37);
+  border-radius: 10px;
+  margin-left: 10px;
+  padding: 10px;
+  top: 0;
+}
+
+.select-user{
+  background-color: blanchedalmond;
+  width: 200px;
+  margin: 5px 0 20px 0px;
+  width: 100%;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bolder;
+}
+
+.main-cont{
+  position: relative;
+}
+
+.chattingwith{
+  font-size: 20px;
+  color: rgb(104, 0, 0);
+  text-align: center;
+  box-shadow: 0 0 10px 2px black;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px 0 10px;
+}
+
+#typing-stat{
+  font-size: 15px;
+  color: gray;
+}
+
 .mes-cont{
   width: 100%;
   height: 90%;

@@ -1,0 +1,23 @@
+.user-box{
+    width: 200px;
+    background-color: azure;
+    margin: 5px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    border-radius: 10px;
+    padding: 0 0 0 10px;
+    transition: all 0.5s;
+    cursor: pointer;
+}
+
+.user-box:hover{
+    background-color: beige;
+    transform: scale(1.05);
+}
+
+.user-box:active{
+    transition: all .1s;
+    transform: scale(1);
+    background-color: azure;
+}
