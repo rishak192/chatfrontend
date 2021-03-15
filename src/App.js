@@ -126,7 +126,7 @@ class App extends React.Component {
 
   showPrevChats = () => {
     // console.log(this.state.id);
-    fetch((`https://chatbackendchat.herokuapp.com/${this.state.id}`), {
+    fetch((`https://chatbackendchat.herokuapp.com/prevchats/${this.state.id}`), {
       method: 'get',
       headers: {
         'Accept': 'application/json',
