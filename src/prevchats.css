@@ -1,0 +1,31 @@
+.chatid-cont{
+    width: 200px;
+    margin: 5px;
+    height: 40px;
+    background-color: azure;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.chatid-cont:hover{
+    background-color: beige;
+    transform: scale(1.05);
+}
+
+.chatid-cont:active{
+    transform: scale(1);
+    transition: all 0.2s;
+}
+
+.selected-chat{
+    background-color: rgb(207, 201, 201);
+    transform: scale(0.9);
+    height: 40px;
+    width: 200px;
+    border-radius: 10px;
+    padding: 10px;
+}
