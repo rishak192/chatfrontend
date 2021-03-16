@@ -58,10 +58,17 @@
   padding: 0 10px 0 10px;
 }
 
-#typing-stat{
+.typing-stat{
   font-size: 15px;
   color: gray;
+  animation: typinganim 2s infinite;
 }
+
+@keyframes typinganim {
+  0% {opacity: 1;}
+  50% {opacity: 0;}
+}
+
 
 .mes-cont{
   width: 100%;

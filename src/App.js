@@ -6,7 +6,7 @@ import AllUser from './alluser';
 import PrevChats from './prevchats';
 
 const SERVER = 'https://chatbackendchat.herokuapp.com/'
-// const SERVER = 'localhost:4000'
+// const SERVER = 'http://localhost:4000'
 let socket
 var mescont
 
@@ -25,7 +25,8 @@ class App extends React.Component {
       chattingwith: "",
       typing: false,
       prevchats: {},
-      showchat:false
+      showchat: false,
+      online:{}
     }
   }
 
@@ -35,9 +36,8 @@ class App extends React.Component {
     mescont.scrollTo(0, scrollheight)
   }
 
-
   componentDidMount() {
-    fetch('https://chatbackendchat.herokuapp.com/alluser', {
+    fetch(`${SERVER}/alluser`, {
       method: 'get',
       //   body : JSON.stringify({
       //     signupDetails
@@ -63,16 +63,20 @@ class App extends React.Component {
       socket = io(SERVER, { 'transports': ['websocket', 'polling'] });
     }
     // console.log(socket);
-
     socket.on('started', data => {
-      // console.log(data);
-      this.setState({ messages: data })
+      if (this.state[`message${this.state.chatid}`] === undefined) {
+        this.setState({
+          [`message${this.state.chatid}`]: data
+        })
+      } else {
+      }
     })
+
 
     socket.on('receive', ({ mes, id, datetime }) => {
       // console.log(mes, id, datetime);
       this.setState(prevState => ({
-        messages: [...prevState.messages, { 'message': mes, 'userid': id, 'datetime': datetime }]
+        [`message${this.state.chatid}`]: [...prevState[`message${this.state.chatid}`], { 'message': mes, 'userid': id, 'datetime': datetime }]
       }));
     })
 
@@ -91,10 +95,33 @@ class App extends React.Component {
       }
     })
 
+    socket.on('friendsonline',online=>{
+      // console.log('friends online',online);
+      this.setState({
+        online:online
+      })
+    })
+
+    socket.on('online',online=>{
+      // console.log("online",online);
+      // this.setState(prevState=>({
+      //   online:{...prevState.online,[userid]:true}
+      // }),()=>console.log(this.state.online))
+      this.setState({
+        online:online
+      })
+    })
+
+    socket.on('disconnected',userid=>{
+      // console.log("disconnected",userid);
+      this.setState(prevState=>({
+        online:{...prevState.online,[userid]:false}
+      }))
+    })
+
   }
 
   handleChange = (e) => {
-    console.log(e.target.name, e.target.value);
     this.setState({
       [e.target.name]: e.target.value
     })
@@ -110,7 +137,7 @@ class App extends React.Component {
       if (e.code === "Enter" || e === "Enter") {
         socket.emit('send', { mes, id, chatId })
         this.setState(prevState => ({
-          messages: [...prevState.messages, {
+          [`message${this.state.chatid}`]: [...prevState[`message${this.state.chatid}`], {
             'message': mes, 'userid': this.state.id, datetime: {
               date: d.toDateString().toString(),
               time: d.toTimeString().toString()
@@ -126,7 +153,7 @@ class App extends React.Component {
 
   showPrevChats = () => {
     // console.log(this.state.id);
-    fetch((`https://chatbackendchat.herokuapp.com/prevchats/${this.state.id}`), {
+    fetch((`${SERVER}/prevchats/${this.state.id}`), {
       method: 'get',
       headers: {
         'Accept': 'application/json',
@@ -137,7 +164,7 @@ class App extends React.Component {
         // console.log(json.result.chatid);
         this.setState({
           prevchats: json.result.chatid
-        })
+        },()=>console.log(this.state.prevchats))
         // for(var item in json.result.chatid){
         //   console.log(item);
         // }
@@ -163,11 +190,10 @@ class App extends React.Component {
           })
         }
 
-        // console.log(chatid, userid);
         socket.emit('join', { userid, chatid, chattingwith })
-        socket.on("joinsuccess", data => {
-          // alert("You have joined " + data + " room")
-        })
+        // socket.on("joinsuccess", data => {
+        //   alert("You have joined " + data + " room")
+        // })
       } else {
         alert("ID id empty")
       }
@@ -215,15 +241,23 @@ class App extends React.Component {
   }
 
   selectPrevChat = (prevchatid) => {
-    var both = prevchatid.split(this.state.id)
-    both.splice(both.indexOf(""), 1)
     if (prevchatid !== this.state.chatid) {
+      socket.emit('leaveroom', this.state.chatid)
       this.setState({
-        messages: [],
-        chatid: prevchatid,
-        inroom: true,
-        chattingwith: both[0]
-      }, () => this.join())
+        join: false
+      }, () => {
+        if (!this.state.join) {
+          var both = prevchatid.split(this.state.id)
+          both.splice(both.indexOf(""), 1)
+          this.setState({
+            messages: [],
+            chatid: prevchatid,
+            inroom: true,
+            chattingwith: both[0],
+            join: true
+          }, () => this.join())
+        }
+      })
     }
   }
 
@@ -235,24 +269,24 @@ class App extends React.Component {
     }, () => this.join())
   }
 
-  showChat=()=>{
-    this.setState(prevState=>({
-        showChat:!prevState.showChat
+  showChat = () => {
+    this.setState(prevState => ({
+      showChat: !prevState.showChat
     }))
   }
 
   render() {
     return (
       <div>
-        <div className="chat-heading" style={{display:"flex",alignItems:"Center"}}>
+        <div className="chat-heading" style={{ display: "flex", alignItems: "Center" }}>
           {
-            this.state.join?<button style={{height:"50%",backgroundColor:"white",border:"none"}} onClick={this.showChat}>Show Chats</button>:null
+            this.state.inroom ? <button style={{ height: "50%", backgroundColor: "white", border: "none" }} onClick={this.showChat}>Show Chats</button> : null
           }
-          <div style={{width:"100%"}}>
+          <div style={{ width: "100%" }}>
             <h1>Chat</h1>
             <div>
               {
-                this.state.join ? <p>chatID:{this.state.chatid}</p> : <input placeholder="Enter chat id" type="text" name="chatid" onChange={this.handleChange} value={this.state.chatid} />
+                this.state.inroom ? <p>chatID:{this.state.chatid}</p> : <input placeholder="Enter chat id" type="text" name="chatid" onChange={this.handleChange} value={this.state.chatid} />
               }
             </div>
           </div>
@@ -266,22 +300,24 @@ class App extends React.Component {
                     "Chatting with: " + this.state.chattingwith
                   }
                 </p>
-                <p id="typing-stat">
-                  {
-                    this.state.typing ? "typing..." : null
-                  }
-                </p>
+                {
+                  this.state.typing?<div className="typing-stat">
+                  <p >
+                      typing...
+                  </p>
+                </div>:null
+                }
               </div> : null
             }
             <div className="mes-cont">
               {
-                this.state.messages.map(item => {
+                this.state[`message${this.state.chatid}`] !== undefined ? this.state[`message${this.state.chatid}`].map(item => {
                   return <Message mes={item.message} time={item.datetime.time.split(' ')[0]} class={item.userid === this.state.id ? "sen" : "rec"} />
-                })
+                }) : null
               }
             </div>
             {
-              this.state.join ? <div className="input-send">
+              this.state.inroom ? <div className="input-send">
                 <input type="text" name="mes" onKeyPress={this.send} onChange={this.typing} value={this.state.mes} />
                 <button onClick={() => this.send("Enter")}>Send</button>
               </div> : <div className="input-send">
@@ -291,17 +327,17 @@ class App extends React.Component {
             }
           </div>
           {
-            !this.state.join ? <div className="users-cont">
+            !this.state.inroom ? <div className="users-cont">
               <div className="select-user">
                 <p>Select a user</p>
               </div>
               <AllUser selectUser={this.selectUser} users={this.state.users} />
             </div> :
-              <div className="prev-chats" style={{display:this.state.showChat?"block":"none"}}>
+              <div className="prev-chats" style={{ display: this.state.showChat ? "block" : "none" }}>
                 {
                   Object.keys(this.state.prevchats).map((obj, i) => {
                     return (
-                      <PrevChats userid={this.state.id} selectPrevChat={this.selectPrevChat} currchatid={this.state.chatid} prevchats={obj} />
+                      <PrevChats online={this.state.online} userid={this.state.id} selectPrevChat={this.selectPrevChat} currchatid={this.state.chatid} prevchats={obj} />
                     )
                   })
                 }

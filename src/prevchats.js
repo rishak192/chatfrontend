@@ -1,30 +1,34 @@
 import React from 'react'
 import './prevchats.css'
 
-class PrevChats extends React.Component{
+class PrevChats extends React.Component {
 
-    constructor(props){
+    constructor(props) {
         super(props)
-        this.state={
-            friend:""
+        this.state = {
+            friend: ""
         }
     }
 
-    componentDidMount(){
+    componentDidMount() {
         // console.log(this.props.prevchats,this.props.userid);
-        var friend=this.props.prevchats.split(this.props.userid)
-        var i=friend.indexOf("")
-        friend.splice(i,1)
-        // console.log(friend);
+        var friend = this.props.prevchats.split(this.props.userid)
+        var i = friend.indexOf("")
+        friend.splice(i, 1)
+        // console.log(friend[0]);
+        // console.log(this.props.online[friend[0]]);
         this.setState({
-            friend:friend
+            friend: friend[0]
         })
     }
 
-    render(){
-        return(
-            <div className={this.props.prevchats===this.props.currchatid?"selected-chat":"chatid-cont"} onClick={()=>this.props.selectPrevChat(this.props.prevchats)}>
-                <p>{this.state.friend}</p>
+    render() {
+        return (
+            <div>
+                <div className={this.props.prevchats === this.props.currchatid ? "selected-chat" : "chatid-cont"} onClick={() => this.props.selectPrevChat(this.props.prevchats)}>
+                    <p>{this.state.friend}</p>
+                    <div className={this.props.online[this.state.friend] ? "online" : "offline"} />
+                </div>
             </div>
         )
     }

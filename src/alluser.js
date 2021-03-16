@@ -3,10 +3,6 @@ import './alluser.css'
 
 class AllUser extends React.Component {
 
-    constructor(props) {
-        super(props)
-    }
-
     render() {
         return (
             <div >
