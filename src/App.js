@@ -5,7 +5,7 @@ import Message from './messagecont';
 import AllUser from './alluser';
 import PrevChats from './prevchats';
 
-const SERVER = 'https://chatbackendchat.herokuapp.com/'
+const SERVER = 'https://chatbackendchat.herokuapp.com'
 // const SERVER = 'http://localhost:4000'
 let socket
 var mescont
