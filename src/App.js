@@ -4,6 +4,7 @@ import io from 'socket.io-client'
 import Message from './messagecont';
 import AllUser from './alluser';
 import PrevChats from './prevchats';
+import { json } from 'body-parser';
 
 const SERVER = 'https://chatbackendchat.herokuapp.com'
 // const SERVER = 'http://localhost:4000'
@@ -26,7 +27,7 @@ class App extends React.Component {
       typing: false,
       prevchats: {},
       showchat: false,
-      online:{}
+      online: {}
     }
   }
 
@@ -95,28 +96,37 @@ class App extends React.Component {
       }
     })
 
-    socket.on('friendsonline',online=>{
+    socket.on('friendsonline', online => {
       // console.log('friends online',online);
       this.setState({
-        online:online
+        online: online
       })
     })
 
-    socket.on('online',online=>{
+    socket.on('online', online => {
       // console.log("online",online);
       // this.setState(prevState=>({
       //   online:{...prevState.online,[userid]:true}
       // }),()=>console.log(this.state.online))
       this.setState({
-        online:online
+        online: online
       })
     })
 
-    socket.on('disconnected',userid=>{
+    socket.on('disconnected', userid => {
       // console.log("disconnected",userid);
-      this.setState(prevState=>({
-        online:{...prevState.online,[userid]:false}
+      this.setState(prevState => ({
+        online: { ...prevState.online, [userid]: false }
       }))
+    })
+
+    socket.on('imagereceived',({img,result})=>{
+      console.log(img);
+      const image=new Image()
+      image.height=200
+      image.width=200
+      image.src=result
+      document.body.append(image)
     })
 
   }
@@ -164,7 +174,7 @@ class App extends React.Component {
         // console.log(json.result.chatid);
         this.setState({
           prevchats: json.result.chatid
-        },()=>console.log(this.state.prevchats))
+        }, () => console.log(this.state.prevchats))
         // for(var item in json.result.chatid){
         //   console.log(item);
         // }
@@ -275,6 +285,79 @@ class App extends React.Component {
     }))
   }
 
+  openFiles = () => {
+    var file = document.getElementById('file')
+    file.click()
+  }
+
+  sendFile = (e) => {
+    // var file = document.getElementById('file')
+    var fileReader = new FileReader();
+
+      // console.log("changed");
+      // console.log(e.target.files[0]);
+      // fileReader.readAsText(e.target.files[0])
+      fileReader.readAsDataURL(e.target.files[0])
+      // fileReader.readAsArrayBuffer(file)
+
+      var chatid=this.state.chatid
+      var userid=this.state.id
+
+    fileReader.addEventListener('load', () => {
+      // console.log(fileReader.result);
+      var result=fileReader.result
+      socket.emit('image',{chatid,userid,result})
+      // fetch(`${SERVER}/image`, {
+      //   method: 'post',
+      //   body: JSON.stringify({
+      //     data: [fileReader.result]
+      //   }),
+      //   headers: {
+      //     'Accept': 'application/json',
+      //     'Content-Type': 'application/json'
+      //   }
+      // })
+      //   .then(res => res.json())
+      //   .then(res => {
+      //     console.log(res.image)
+      //     const img = new Image()
+      //     img.height = 500
+      //     img.width = 500
+      //     img.src = res.image
+      //     document.body.appendChild(img)
+      //   })
+      //   .catch(err => console.log(err))
+      const img = new Image()
+      img.height = 100
+      img.width = 100
+      img.src = fileReader.result
+      document.body.appendChild(img)
+      // img.onload= () => {
+      //   const canvas = document.createElement('canvas')
+      //   const context = canvas.getContext('2d')
+      //   context.drawImage(img, 0, 0)
+      //   const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+      //   const data = imageData.data
+      //   console.log(data);
+      //   for (var i = 0; i <= data.length; i += 4) {
+      //     const avg = (data[i] + data[i + 1] + data[i + 2]) / 3
+      //     data[i] = avg
+      //     data[i + 1] = avg
+      //     data[i + 2] = avg
+      //   }
+
+      //   context.putImageData(imageData, 0, 0)
+      //   document.body.append(canvas)
+
+      //   canvas.toBlob((blob)=>{
+      //     const form=new FormData()
+      //     form.append('image',blob,'first.jpg')
+
+      //   })
+      // }
+    })
+  }
+
   render() {
     return (
       <div>
@@ -301,11 +384,11 @@ class App extends React.Component {
                   }
                 </p>
                 {
-                  this.state.typing?<div className="typing-stat">
-                  <p >
+                  this.state.typing ? <div className="typing-stat">
+                    <p >
                       typing...
                   </p>
-                </div>:null
+                  </div> : null
                 }
               </div> : null
             }
@@ -318,9 +401,13 @@ class App extends React.Component {
             </div>
             {
               this.state.inroom ? <div className="input-send">
-                <input type="text" name="mes" onKeyPress={this.send} onChange={this.typing} value={this.state.mes} />
+                <input id="file" onChange={this.sendFile} type="file" hidden />
+                <div>
+                  <p onClick={this.openFiles}>+</p>
+                  <input type="text" name="mes" onKeyPress={this.send} onChange={this.typing} value={this.state.mes} />
+                </div>
                 <button onClick={() => this.send("Enter")}>Send</button>
-              </div> : <div className="input-send">
+              </div> : <div className="join">
                 <input placeholder="Enter your name..." type="text" name="id" onChange={this.handleChange} value={this.state.id} />
                 <button onClick={this.joinWithChatid}>Join</button>
               </div>
