@@ -5,6 +5,7 @@ import Message from './messagecont';
 import AllUser from './alluser';
 import PrevChats from './prevchats';
 import { json } from 'body-parser';
+import Image from './image';
 
 const SERVER = 'https://chatbackendchat.herokuapp.com'
 // const SERVER = 'http://localhost:4000'
@@ -18,6 +19,7 @@ class App extends React.Component {
     this.state = {
       id: "",
       mes: "",
+      type: "",
       messages: [],
       join: false,
       chatid: "",
@@ -74,10 +76,10 @@ class App extends React.Component {
     })
 
 
-    socket.on('receive', ({ mes, id, datetime }) => {
-      // console.log(mes, id, datetime);
+    socket.on('receive', ({ mes, id, datetime, type }) => {
+      // console.log(mes, id, datetime,type);
       this.setState(prevState => ({
-        [`message${this.state.chatid}`]: [...prevState[`message${this.state.chatid}`], { 'message': mes, 'userid': id, 'datetime': datetime }]
+        [`message${this.state.chatid}`]: [...prevState[`message${this.state.chatid}`], { 'message': mes, 'type': type, 'userid': id, 'datetime': datetime }]
       }));
     })
 
@@ -120,14 +122,15 @@ class App extends React.Component {
       }))
     })
 
-    socket.on('imagereceived',({img,result})=>{
-      console.log(img);
-      const image=new Image()
-      image.height=200
-      image.width=200
-      image.src=result
-      document.body.append(image)
-    })
+    // socket.on('imagereceived', ({ img, result }) => {
+    //   console.log(img);
+    //   console.log(result);
+    //   var image=document.createElement('img')
+    //   image.style.height="200px"
+    //   image.style.width="200px"
+    //   image.src=result
+    //   document.body.appendChild(image)
+    // })
 
   }
 
@@ -137,27 +140,36 @@ class App extends React.Component {
     })
   }
 
-  send = (e) => {
-    // console.log(e.charCode,e.code);
+  sendMes = (e) => {
+    // console.log('sendmes');
+    if (e.code === "Enter" || e === "Enter") {
+      this.setState({
+        type: 'txt'
+      }, () => this.send())
+    }
+  }
+
+  send = () => {
+    // console.log('sending');
     const mes = this.state.mes
+    const type = this.state.type
     const id = this.state.id
     const chatId = this.state.chatid
     var d = new Date(Date.now());
     if (mes !== "") {
-      if (e.code === "Enter" || e === "Enter") {
-        socket.emit('send', { mes, id, chatId })
-        this.setState(prevState => ({
-          [`message${this.state.chatid}`]: [...prevState[`message${this.state.chatid}`], {
-            'message': mes, 'userid': this.state.id, datetime: {
-              date: d.toDateString().toString(),
-              time: d.toTimeString().toString()
-            }
-          }]
-        }));
-        this.setState({
-          mes: ""
-        })
-      }
+      socket.emit('send', { mes, id, chatId, type })
+      this.setState(prevState => ({
+        [`message${chatId}`]: [...prevState[`message${chatId}`], {
+          'message': mes, 'type': type, 'userid': id, datetime: {
+            date: d.toDateString().toString(),
+            time: d.toTimeString().toString()
+          }
+        }]
+      }));
+      this.setState({
+        mes: "",
+        type: ""
+      })
     }
   }
 
@@ -174,7 +186,7 @@ class App extends React.Component {
         // console.log(json.result.chatid);
         this.setState({
           prevchats: json.result.chatid
-        }, () => console.log(this.state.prevchats))
+        })
         // for(var item in json.result.chatid){
         //   console.log(item);
         // }
@@ -294,19 +306,27 @@ class App extends React.Component {
     // var file = document.getElementById('file')
     var fileReader = new FileReader();
 
-      // console.log("changed");
-      // console.log(e.target.files[0]);
-      // fileReader.readAsText(e.target.files[0])
-      fileReader.readAsDataURL(e.target.files[0])
-      // fileReader.readAsArrayBuffer(file)
+    // console.log("changed");
+    // console.log(e.target.files[0]);
+    // fileReader.readAsText(e.target.files[0])
+    fileReader.readAsDataURL(e.target.files[0])
+    // fileReader.readAsArrayBuffer(file)
 
-      var chatid=this.state.chatid
-      var userid=this.state.id
+    var chatid = this.state.chatid
+    var userid = this.state.id
 
     fileReader.addEventListener('load', () => {
       // console.log(fileReader.result);
-      var result=fileReader.result
-      socket.emit('image',{chatid,userid,result})
+      var result = fileReader.result
+      // console.log(result);
+      socket.emit('image', { chatid, userid, result })
+      this.setState({
+        mes: result,
+        type: 'img'
+      },()=>{
+        // console.log('type image');
+        this.send()
+      })
       // fetch(`${SERVER}/image`, {
       //   method: 'post',
       //   body: JSON.stringify({
@@ -327,11 +347,11 @@ class App extends React.Component {
       //     document.body.appendChild(img)
       //   })
       //   .catch(err => console.log(err))
-      const img = new Image()
-      img.height = 100
-      img.width = 100
-      img.src = fileReader.result
-      document.body.appendChild(img)
+      // var img=document.createElement('img')
+      // img.style.height="100px"
+      // img.style.width="100px"
+      // img.src=result
+      // document.body.appendChild(img)
       // img.onload= () => {
       //   const canvas = document.createElement('canvas')
       //   const context = canvas.getContext('2d')
@@ -395,7 +415,10 @@ class App extends React.Component {
             <div className="mes-cont">
               {
                 this.state[`message${this.state.chatid}`] !== undefined ? this.state[`message${this.state.chatid}`].map(item => {
-                  return <Message mes={item.message} time={item.datetime.time.split(' ')[0]} class={item.userid === this.state.id ? "sen" : "rec"} />
+                  return item.type==='txt'?
+                  <Message mes={item.message} time={item.datetime.time.split(' ')[0]} class={item.userid === this.state.id ? "sen" : "rec"} />
+                  :
+                  <Image src={item.message} time={item.datetime.time.split(' ')[0]} class={item.userid === this.state.id ? "sen" : "rec"}/>
                 }) : null
               }
             </div>
@@ -404,9 +427,9 @@ class App extends React.Component {
                 <input id="file" onChange={this.sendFile} type="file" hidden />
                 <div>
                   <p onClick={this.openFiles}>+</p>
-                  <input type="text" name="mes" onKeyPress={this.send} onChange={this.typing} value={this.state.mes} />
+                  <input type="text" name="mes" onKeyPress={this.sendMes} onChange={this.typing} value={this.state.mes} />
                 </div>
-                <button onClick={() => this.send("Enter")}>Send</button>
+                <button onClick={() => this.sendMes("Enter")}>Send</button>
               </div> : <div className="join">
                 <input placeholder="Enter your name..." type="text" name="id" onChange={this.handleChange} value={this.state.id} />
                 <button onClick={this.joinWithChatid}>Join</button>
