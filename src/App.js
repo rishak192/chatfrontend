@@ -40,25 +40,25 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-    fetch(`${SERVER}/alluser`, {
-      method: 'get',
-      //   body : JSON.stringify({
-      //     signupDetails
-      //   }),
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
-    }).then((res) => res.json())
-      .then((json) => {
-        // console.log(json.result);
-        this.setState({
-          users: json.result
-        })
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+    // fetch(`${SERVER}/alluser`, {
+    //   method: 'get',
+    //   //   body : JSON.stringify({
+    //   //     signupDetails
+    //   //   }),
+    //   headers: {
+    //     'Accept': 'application/json',
+    //     'Content-Type': 'application/json'
+    //   }
+    // }).then((res) => res.json())
+    //   .then((json) => {
+    //     // console.log(json.result);
+    //     this.setState({
+    //       users: json.result
+    //     })
+    //   })
+    //   .catch((error) => {
+    //     console.error(error);
+    //   });
 
     // console.log("render");
 
@@ -67,20 +67,27 @@ class App extends React.Component {
     }
     // console.log(socket);
     socket.on('started', data => {
-      if (this.state[`message${this.state.chatid}`] === undefined) {
-        this.setState({
-          [`message${this.state.chatid}`]: data
-        })
-      } else {
-      }
+      this.setState({
+        [`message${this.state.chatid}`]: data
+      })
     })
 
 
-    socket.on('receive', ({ mes, id, datetime, type }) => {
-      // console.log(mes, id, datetime,type);
-      this.setState(prevState => ({
-        [`message${this.state.chatid}`]: [...prevState[`message${this.state.chatid}`], { 'message': mes, 'type': type, 'userid': id, 'datetime': datetime }]
-      }));
+    socket.on('receive', ({ mes, id, datetime, type, chatId }) => {
+      // console.log(mes, id, datetime, type, chatId);
+      // console.log(mes,id);
+      if (this.state.chatid === chatId) {
+        // console.log('live from', id);
+        this.setState(prevState => ({
+          [`message${this.state.chatid}`]: [...prevState[`message${this.state.chatid}`], { 'message': mes, 'type': type, 'userid': id, 'datetime': datetime }]
+        }));
+      } else {
+        console.log('notification from', id);
+        this.setState(prevState => ({
+          [`message${chatId}`]: [...prevState[`message${chatId}`], { 'message': mes, 'type': type, 'userid': id, 'datetime': datetime }],
+          [`notif${chatId}`]: prevState[`notif${chatId}`] + 1
+        }));
+      }
     })
 
     socket.on('typing', ({ userid, chatid }) => {
@@ -186,6 +193,22 @@ class App extends React.Component {
         // console.log(json.result.chatid);
         this.setState({
           prevchats: json.result.chatid
+        }, async () => {
+          for (var i in this.state.prevchats) {
+            var both = i.split(this.state.id)
+            both.splice(both.indexOf(""), 1)
+            var userid = this.state.id
+            var chatid = i
+            var chattingwith = both[0]
+            // console.log(i, both[0]);
+            if (both[0] !== undefined) {
+              await socket.emit('join', { userid, chatid })
+              this.setState({
+                [`message${chatid}`]: [],
+                [`notif${chatid}`]: 0
+              })
+            }
+          }
         })
         // for(var item in json.result.chatid){
         //   console.log(item);
@@ -212,7 +235,7 @@ class App extends React.Component {
           })
         }
 
-        socket.emit('join', { userid, chatid, chattingwith })
+        // socket.emit('join', { userid, chatid, chattingwith })
         // socket.on("joinsuccess", data => {
         //   alert("You have joined " + data + " room")
         // })
@@ -233,7 +256,9 @@ class App extends React.Component {
           chattingwith: name,
           chatid: chatid[0] + chatid[1],
           inroom: true
-        }, () => this.join())
+        }, () => {
+          // this.join()
+        })
         // console.log(this.state.chatid);
       } else {
         alert('Choose other user!')
@@ -264,9 +289,10 @@ class App extends React.Component {
 
   selectPrevChat = (prevchatid) => {
     if (prevchatid !== this.state.chatid) {
-      socket.emit('leaveroom', this.state.chatid)
+      // socket.emit('leaveroom', this.state.chatid)
       this.setState({
-        join: false
+        join: false,
+        [`notif${prevchatid}`]: 0
       }, () => {
         if (!this.state.join) {
           var both = prevchatid.split(this.state.id)
@@ -277,18 +303,42 @@ class App extends React.Component {
             inroom: true,
             chattingwith: both[0],
             join: true
-          }, () => this.join())
+          }, () => {
+            // this.join()
+            var chatid = this.state.chatid
+            socket.emit('getchat', { chatid })
+          })
         }
       })
     }
   }
 
   joinWithChatid = () => {
-    var both = this.state.chatid.split(this.state.id)
-    both.splice(both.indexOf(""), 1)
-    this.setState({
-      chattingwith: both[0]
-    }, () => this.join())
+    if (this.state.id !== "") {
+      if (this.state.chatid !== "") {
+        var both = this.state.chatid.split(this.state.id)
+        both.splice(both.indexOf(""), 1)
+        this.setState({
+          chattingwith: both[0]
+        }, () => {
+          // this.join()
+          var userid = this.state.id
+          var chatid = this.state.chatid
+          var chattingwith = this.state.chattingwith
+          socket.emit('newchat', { userid, chatid, chattingwith });
+        })
+      }
+
+      if (!this.state.join) {
+        this.showPrevChats()
+        this.setState({
+          join: true,
+          inroom: true
+        })
+      }
+    }else{
+      alert('Please enter name!')
+    }
   }
 
   showChat = () => {
@@ -323,7 +373,7 @@ class App extends React.Component {
       this.setState({
         mes: result,
         type: 'img'
-      },()=>{
+      }, () => {
         // console.log('type image');
         this.send()
       })
@@ -383,7 +433,7 @@ class App extends React.Component {
       <div>
         <div className="chat-heading" style={{ display: "flex", alignItems: "Center" }}>
           {
-            this.state.inroom ? <button style={{ height: "50%", backgroundColor: "white", border: "none" }} onClick={this.showChat}>Show Chats</button> : null
+            this.state.inroom ? <button style={{ height: "40px", width: "20%", backgroundColor: "white", border: "none" }} onClick={this.showChat}>Show Chats</button> : null
           }
           <div style={{ width: "100%" }}>
             <h1>Chat</h1>
@@ -393,11 +443,14 @@ class App extends React.Component {
               }
             </div>
           </div>
+          {
+            this.state.inroom ? <p style={{ width: "20%" }}>{this.state.id}</p> : null
+          }
         </div>
         <div className="main-cont">
           <div className="chat-box">
             {
-              this.state.join ? <div className="chattingwith">
+              this.state.join && this.state.chattingwith !== "" ? <div className="chattingwith">
                 <p>
                   {
                     "Chatting with: " + this.state.chattingwith
@@ -415,43 +468,43 @@ class App extends React.Component {
             <div className="mes-cont">
               {
                 this.state[`message${this.state.chatid}`] !== undefined ? this.state[`message${this.state.chatid}`].map(item => {
-                  return item.type==='txt'?
-                  <Message mes={item.message} time={item.datetime.time.split(' ')[0]} class={item.userid === this.state.id ? "sen" : "rec"} />
-                  :
-                  <Image src={item.message} time={item.datetime.time.split(' ')[0]} class={item.userid === this.state.id ? "sen" : "rec"}/>
+                  return item.type === 'txt' ?
+                    <Message mes={item.message} time={item.datetime.time.split(' ')[0]} class={item.userid === this.state.id ? "sen" : "rec"} />
+                    :
+                    <Image src={item.message} time={item.datetime.time.split(' ')[0]} class={item.userid === this.state.id ? "sen" : "rec"} />
                 }) : null
               }
             </div>
             {
-              this.state.inroom ? <div className="input-send">
+              this.state.inroom ? this.state.chattingwith !== "" ? <div className="input-send">
                 <input id="file" onChange={this.sendFile} type="file" hidden />
                 <div>
                   <p onClick={this.openFiles}>+</p>
                   <input type="text" name="mes" onKeyPress={this.sendMes} onChange={this.typing} value={this.state.mes} />
                 </div>
                 <button onClick={() => this.sendMes("Enter")}>Send</button>
-              </div> : <div className="join">
+              </div> : <p style={{ width: "100%", textAlign: "center", fontWeight: "bolder" }}>Select a chat to start!</p> : <div className="join">
                 <input placeholder="Enter your name..." type="text" name="id" onChange={this.handleChange} value={this.state.id} />
                 <button onClick={this.joinWithChatid}>Join</button>
               </div>
             }
           </div>
           {
-            !this.state.inroom ? <div className="users-cont">
-              <div className="select-user">
-                <p>Select a user</p>
-              </div>
-              <AllUser selectUser={this.selectUser} users={this.state.users} />
-            </div> :
-              <div className="prev-chats" style={{ display: this.state.showChat ? "block" : "none" }}>
-                {
-                  Object.keys(this.state.prevchats).map((obj, i) => {
-                    return (
-                      <PrevChats online={this.state.online} userid={this.state.id} selectPrevChat={this.selectPrevChat} currchatid={this.state.chatid} prevchats={obj} />
-                    )
-                  })
-                }
-              </div>
+            // !this.state.inroom ? <div className="users-cont">
+            //   <div className="select-user">
+            //     <p>Select a user</p>
+            //   </div>
+            //   <AllUser selectUser={this.selectUser} users={this.state.users} />
+            // </div> :
+            this.state.inroom ? <div className="prev-chats" style={{ display: this.state.showChat ? "block" : "none" }}>
+              {
+                Object.keys(this.state.prevchats).map((obj, i) => {
+                  return (
+                    <PrevChats online={this.state.online} userid={this.state.id} selectPrevChat={this.selectPrevChat} notif={this.state[`notif${obj}`]} currchatid={this.state.chatid} prevchats={obj} />
+                  )
+                })
+              }
+            </div> : null
           }
         </div>
       </div>

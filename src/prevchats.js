@@ -26,7 +26,12 @@ class PrevChats extends React.Component {
         return (
             <div>
                 <div className={this.props.prevchats === this.props.currchatid ? "selected-chat" : "chatid-cont"} onClick={() => this.props.selectPrevChat(this.props.prevchats)}>
-                    <p>{this.state.friend}</p>
+                    <div style={{ display: "flex" }}>
+                        <p>{this.state.friend}</p>
+                        {
+                            this.props.notif !== 0 ? <div className="notif"><p>{this.props.notif}</p></div> : null
+                        }
+                    </div>
                     <div className={this.props.online[this.state.friend] ? "online" : "offline"} />
                 </div>
             </div>
