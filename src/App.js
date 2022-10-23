@@ -2,9 +2,7 @@ import React from 'react'
 import './App.css';
 import io from 'socket.io-client'
 import Message from './messagecont';
-import AllUser from './alluser';
 import PrevChats from './prevchats';
-import { json } from 'body-parser';
 import Image from './image';
 
 const SERVER = 'https://chatbackendchat.herokuapp.com'
@@ -199,7 +197,7 @@ class App extends React.Component {
             both.splice(both.indexOf(""), 1)
             var userid = this.state.id
             var chatid = i
-            var chattingwith = both[0]
+            // var chattingwith = both[0]
             // console.log(i, both[0]);
             if (both[0] !== undefined) {
               await socket.emit('join', { userid, chatid })
@@ -224,7 +222,7 @@ class App extends React.Component {
     // console.log(this.state.chattingwith);
     var chatid = this.state.chatid
     var userid = this.state.id
-    var chattingwith = this.state.chattingwith
+    // var chattingwith = this.state.chattingwith
     if (chatid !== "" && chatid !== null) {
       if (userid !== "" && userid !== null) {
 
